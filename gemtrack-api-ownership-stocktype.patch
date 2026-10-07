@@ -1,0 +1,353 @@
+diff --git a/README.md b/README.md
+index fc1245e..70e8eb1 100644
+--- a/README.md
++++ b/README.md
+@@ -32,14 +32,15 @@ The JWT payload holds `name, role, tenantId, currency, permissions`.
+ | Method | Path | Needs | Notes |
+ |---|---|---|---|
+ | POST | /auth/login | none | body `{ email, password }` |
+-| GET | /gems | read (2) | query: `page, limit, q, status, minPrice, maxPrice, sort` |
++| GET | /gems | read (2) | query: `page, limit, q, status, ownership, stockType, minPrice, maxPrice, sort` |
+ | GET | /gems/:id | read (2) | |
+-| POST | /gems | write (4) | body: all fields except `id` |
++| POST | /gems | write (4) | body: all fields except `id` (including `ownership`, `stockType`) |
+ | PATCH | /gems/:id | write (4) | body: any subset of fields |
+ | DELETE | /gems/:id | write (4) | 204 on success |
+ 
+ `GET /gems` returns `{ data, total, page, limit, totalPages }`.
+ Defaults: `page=1`, `limit=10` (max 100), `sort=sku:asc`.
++`ownership`: `owned | memo_in | partner`. `stockType`: `parcel | single | set | pair`.
+ Sortable fields: `sku, name, caratWeight, cost, price, status`
+ (for example `sort=price:desc`).
+ 
+diff --git a/data/gems.seed.json b/data/gems.seed.json
+index 14eca03..3abe8a0 100644
+--- a/data/gems.seed.json
++++ b/data/gems.seed.json
+@@ -9,7 +9,9 @@
+     "cut": "Excellent",
+     "cost": 5000,
+     "price": 7500,
+-    "status": "in_stock"
++    "status": "in_stock",
++    "ownership": "owned",
++    "stockType": "single"
+   },
+   {
+     "id": "2",
+@@ -21,7 +23,9 @@
+     "cut": "Very Good",
+     "cost": 3200,
+     "price": 4800,
+-    "status": "sold"
++    "status": "sold",
++    "ownership": "owned",
++    "stockType": "single"
+   },
+   {
+     "id": "3",
+@@ -33,7 +37,9 @@
+     "cut": "Excellent",
+     "cost": 9800,
+     "price": 14200,
+-    "status": "on_memo"
++    "status": "on_memo",
++    "ownership": "memo_in",
++    "stockType": "single"
+   },
+   {
+     "id": "4",
+@@ -45,7 +51,9 @@
+     "cut": "Excellent",
+     "cost": 21000,
+     "price": 29500,
+-    "status": "in_stock"
++    "status": "in_stock",
++    "ownership": "owned",
++    "stockType": "pair"
+   },
+   {
+     "id": "5",
+@@ -57,7 +65,9 @@
+     "cut": "Good",
+     "cost": 2400,
+     "price": 3600,
+-    "status": "in_stock"
++    "status": "in_stock",
++    "ownership": "partner",
++    "stockType": "single"
+   },
+   {
+     "id": "6",
+@@ -69,7 +79,9 @@
+     "cut": "Good",
+     "cost": 1500,
+     "price": 2300,
+-    "status": "sold"
++    "status": "sold",
++    "ownership": "owned",
++    "stockType": "parcel"
+   },
+   {
+     "id": "7",
+@@ -81,7 +93,9 @@
+     "cut": "Very Good",
+     "cost": 3900,
+     "price": 5700,
+-    "status": "in_stock"
++    "status": "in_stock",
++    "ownership": "memo_in",
++    "stockType": "set"
+   },
+   {
+     "id": "8",
+@@ -93,7 +107,9 @@
+     "cut": "Excellent",
+     "cost": 13500,
+     "price": 19000,
+-    "status": "on_memo"
++    "status": "on_memo",
++    "ownership": "owned",
++    "stockType": "single"
+   },
+   {
+     "id": "9",
+@@ -105,7 +121,9 @@
+     "cut": "Oval",
+     "cost": 18000,
+     "price": 26000,
+-    "status": "in_stock"
++    "status": "in_stock",
++    "ownership": "owned",
++    "stockType": "single"
+   },
+   {
+     "id": "10",
+@@ -117,7 +135,9 @@
+     "cut": "Cushion",
+     "cost": 7200,
+     "price": 10800,
+-    "status": "sold"
++    "status": "sold",
++    "ownership": "partner",
++    "stockType": "pair"
+   },
+   {
+     "id": "11",
+@@ -129,7 +149,9 @@
+     "cut": "Emerald",
+     "cost": 8800,
+     "price": 12900,
+-    "status": "in_stock"
++    "status": "in_stock",
++    "ownership": "owned",
++    "stockType": "single"
+   },
+   {
+     "id": "12",
+@@ -141,7 +163,9 @@
+     "cut": "Oval",
+     "cost": 11000,
+     "price": 16500,
+-    "status": "on_memo"
++    "status": "on_memo",
++    "ownership": "memo_in",
++    "stockType": "parcel"
+   },
+   {
+     "id": "13",
+@@ -153,7 +177,9 @@
+     "cut": "Trillion",
+     "cost": 2800,
+     "price": 4400,
+-    "status": "in_stock"
++    "status": "in_stock",
++    "ownership": "partner",
++    "stockType": "single"
+   },
+   {
+     "id": "14",
+@@ -165,7 +191,9 @@
+     "cut": "Pear",
+     "cost": 9500,
+     "price": 14000,
+-    "status": "in_stock"
++    "status": "in_stock",
++    "ownership": "owned",
++    "stockType": "set"
+   },
+   {
+     "id": "15",
+@@ -177,7 +205,9 @@
+     "cut": "Cushion",
+     "cost": 1800,
+     "price": 2900,
+-    "status": "sold"
++    "status": "sold",
++    "ownership": "owned",
++    "stockType": "pair"
+   },
+   {
+     "id": "16",
+@@ -189,7 +219,9 @@
+     "cut": "Radiant",
+     "cost": 8400,
+     "price": 12300,
+-    "status": "in_stock"
++    "status": "in_stock",
++    "ownership": "memo_in",
++    "stockType": "single"
+   },
+   {
+     "id": "17",
+@@ -201,7 +233,9 @@
+     "cut": "Very Good",
+     "cost": 900,
+     "price": 1450,
+-    "status": "sold"
++    "status": "sold",
++    "ownership": "owned",
++    "stockType": "single"
+   },
+   {
+     "id": "18",
+@@ -213,7 +247,9 @@
+     "cut": "Excellent",
+     "cost": 8700,
+     "price": 12600,
+-    "status": "on_memo"
++    "status": "on_memo",
++    "ownership": "partner",
++    "stockType": "parcel"
+   },
+   {
+     "id": "19",
+@@ -225,7 +261,9 @@
+     "cut": "Oval",
+     "cost": 3300,
+     "price": 5200,
+-    "status": "in_stock"
++    "status": "in_stock",
++    "ownership": "owned",
++    "stockType": "single"
+   },
+   {
+     "id": "20",
+@@ -237,6 +275,8 @@
+     "cut": "Oval",
+     "cost": 14500,
+     "price": 21000,
+-    "status": "in_stock"
++    "status": "in_stock",
++    "ownership": "owned",
++    "stockType": "single"
+   }
+ ]
+\ No newline at end of file
+diff --git a/src/gemRepository.ts b/src/gemRepository.ts
+index 512bef7..0dbeab1 100644
+--- a/src/gemRepository.ts
++++ b/src/gemRepository.ts
+@@ -1,7 +1,14 @@
+ import { existsSync, readFileSync, writeFileSync, copyFileSync } from 'node:fs'
+ import { fileURLToPath } from 'node:url'
+ import type { ListQuery } from './schemas.js'
+-import type { CreateGemInput, GemItem, Paginated, UpdateGemInput } from './types.js'
++import type {
++  CreateGemInput,
++  GemItem,
++  GemOwnership,
++  GemStockType,
++  Paginated,
++  UpdateGemInput,
++} from './types.js'
+ 
+ // Storage lives behind these functions, so it can be swapped for MongoDB
+ // (Mongoose) later without touching the routes.
+@@ -10,7 +17,25 @@ const seedFile = fileURLToPath(new URL('../data/gems.seed.json', import.meta.url
+ 
+ if (!existsSync(dataFile)) copyFileSync(seedFile, dataFile)
+ 
+-let gems: GemItem[] = JSON.parse(readFileSync(dataFile, 'utf-8')) as GemItem[]
++// Data files created before these fields existed have no ownership/stockType.
++// Spread them across the existing gems (by id) so the filters have something
++// to filter. Saved to disk on the next create/update/delete.
++type StoredGem = Omit<GemItem, 'ownership' | 'stockType'> &
++  Partial<Pick<GemItem, 'ownership' | 'stockType'>>
++
++const OWNERSHIPS: GemOwnership[] = ['owned', 'memo_in', 'partner']
++const STOCK_TYPES: GemStockType[] = ['single', 'parcel', 'set', 'pair']
++
++function withDefaults(gem: StoredGem): GemItem {
++  const n = Number(gem.id) || 0
++  return {
++    ...gem,
++    ownership: gem.ownership ?? OWNERSHIPS[n % OWNERSHIPS.length],
++    stockType: gem.stockType ?? STOCK_TYPES[n % STOCK_TYPES.length],
++  }
++}
++
++let gems: GemItem[] = (JSON.parse(readFileSync(dataFile, 'utf-8')) as StoredGem[]).map(withDefaults)
+ 
+ function save(): void {
+   writeFileSync(dataFile, JSON.stringify(gems, null, 2))
+@@ -24,6 +49,8 @@ export function listGems(query: ListQuery): Paginated<GemItem> {
+   const rows = gems.filter((gem) => {
+     if (search && !`${gem.name} ${gem.sku}`.toLowerCase().includes(search)) return false
+     if (query.status && gem.status !== query.status) return false
++    if (query.ownership && gem.ownership !== query.ownership) return false
++    if (query.stockType && gem.stockType !== query.stockType) return false
+     if (query.minPrice !== undefined && gem.price < query.minPrice) return false
+     if (query.maxPrice !== undefined && gem.price > query.maxPrice) return false
+     return true
+diff --git a/src/schemas.ts b/src/schemas.ts
+index e8854c0..3a177bc 100644
+--- a/src/schemas.ts
++++ b/src/schemas.ts
+@@ -1,6 +1,8 @@
+ import { z } from 'zod'
+ 
+ export const gemStatusSchema = z.enum(['in_stock', 'sold', 'on_memo'])
++export const gemOwnershipSchema = z.enum(['owned', 'memo_in', 'partner'])
++export const gemStockTypeSchema = z.enum(['parcel', 'single', 'set', 'pair'])
+ 
+ export const createGemSchema = z.object({
+   sku: z.string().trim().min(1, 'SKU is required'),
+@@ -8,6 +10,8 @@ export const createGemSchema = z.object({
+   caratWeight: z.number().positive('Carat weight must be greater than 0'),
+   color: z.string().trim().min(1, 'Color is required'),
+   clarity: z.string().trim().min(1, 'Clarity is required'),
++  ownership: gemOwnershipSchema,
++  stockType: gemStockTypeSchema,
+   cut: z.string().trim().min(1, 'Cut is required'),
+   cost: z.number().min(0, 'Cost cannot be negative'),
+   price: z.number().min(0, 'Price cannot be negative'),
+@@ -25,6 +29,8 @@ export const listQuerySchema = z.object({
+   limit: z.coerce.number().int().min(1).max(100).default(10),
+   q: z.string().trim().optional(),
+   status: gemStatusSchema.optional(),
++  ownership: gemOwnershipSchema.optional(),
++  stockType: gemStockTypeSchema.optional(),
+   minPrice: z.coerce.number().min(0).optional(),
+   maxPrice: z.coerce.number().min(0).optional(),
+   sort: z
+diff --git a/src/types.ts b/src/types.ts
+index 16f1eec..d1b8828 100644
+--- a/src/types.ts
++++ b/src/types.ts
+@@ -1,4 +1,6 @@
+ export type GemStatus = 'in_stock' | 'sold' | 'on_memo'
++export type GemOwnership = 'owned' | 'memo_in' | 'partner'
++export type GemStockType = 'parcel' | 'single' | 'set' | 'pair'
+ 
+ export interface GemItem {
+   id: string
+@@ -7,6 +9,8 @@ export interface GemItem {
+   caratWeight: number
+   color: string
+   clarity: string
++  ownership: GemOwnership
++  stockType: GemStockType
+   cut: string
+   cost: number
+   price: number
