@@ -16,6 +16,8 @@ export const createGemSchema = z.object({
   cost: z.number().min(0, 'Cost cannot be negative'),
   price: z.number().min(0, 'Price cannot be negative'),
   status: gemStatusSchema,
+  // Optional: defaults to false. The server forces it to true for sold gems.
+  archived: z.boolean().optional(),
 })
 
 export const updateGemSchema = createGemSchema
@@ -31,6 +33,11 @@ export const listQuerySchema = z.object({
   status: gemStatusSchema.optional(),
   ownership: gemOwnershipSchema.optional(),
   stockType: gemStockTypeSchema.optional(),
+  // Query strings are text, so accept 'true' / 'false' and turn them into a boolean
+  archived: z
+    .enum(['true', 'false'], { error: 'archived must be true or false' })
+    .transform((value) => value === 'true')
+    .optional(),
   minPrice: z.coerce.number().min(0).optional(),
   maxPrice: z.coerce.number().min(0).optional(),
   sort: z

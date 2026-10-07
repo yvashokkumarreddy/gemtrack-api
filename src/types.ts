@@ -15,13 +15,16 @@ export interface GemItem {
   cost: number
   price: number
   status: GemStatus
+  archived: boolean
 }
 
-export type CreateGemInput = Omit<GemItem, 'id'>
-export type UpdateGemInput = Partial<CreateGemInput>
+// `archived` is optional on create: it defaults to false (and is forced to
+// true when the gem is created as sold)
+export type CreateGemInput = Omit<GemItem, 'id' | 'archived'> & { archived?: boolean }
+export type UpdateGemInput = Partial<Omit<GemItem, 'id'>>
 
 export type PermissionLevel = 0 | 2 | 4
-export type ModuleKey = 'inventory'
+export type ModuleKey = 'inventory' | 'archive'
 export type Role = 'admin' | 'viewer' | 'guest'
 
 // Same shape as AuthUser in the frontend, plus the JWT subject
@@ -31,7 +34,8 @@ export interface TokenPayload {
   role: Role
   tenantId: string
   currency: string
-  permissions: Record<ModuleKey, PermissionLevel>
+  // Partial: tokens issued before the `archive` permission existed only have `inventory`
+  permissions: Partial<Record<ModuleKey, PermissionLevel>>
 }
 
 export interface Paginated<T> {

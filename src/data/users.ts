@@ -24,7 +24,7 @@ export const users: UserRecord[] = [
     role: 'admin',
     tenantId: 'tenant-1',
     currency: 'INR',
-    permissions: { inventory: 4 },
+    permissions: { inventory: 4, archive: 4 },
   },
   {
     id: 'u2',
@@ -34,7 +34,7 @@ export const users: UserRecord[] = [
     role: 'viewer',
     tenantId: 'tenant-1',
     currency: 'INR',
-    permissions: { inventory: 2 },
+    permissions: { inventory: 2, archive: 2 },
   },
   {
     id: 'u3',
@@ -44,6 +44,6 @@ export const users: UserRecord[] = [
     role: 'guest',
     tenantId: 'tenant-1',
     currency: 'INR',
-    permissions: { inventory: 0 },
+    permissions: { inventory: 0, archive: 0 },
   },
 ]

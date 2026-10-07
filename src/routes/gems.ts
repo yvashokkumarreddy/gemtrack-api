@@ -1,5 +1,12 @@
 import { Router, type Request } from 'express'
 import {
+  assertCanWriteSomewhere,
+  assertLevel,
+  moduleOf,
+  PERMISSION,
+  resolveListScope,
+} from '../access.js'
+import {
   createGem,
   deleteGem,
   getGem,
@@ -7,7 +14,7 @@ import {
   skuExists,
   updateGem,
 } from '../gemRepository.js'
-import { authenticate, HttpError, requirePermission } from '../middleware.js'
+import { authenticate, HttpError } from '../middleware.js'
 import { createGemSchema, listQuerySchema, updateGemSchema } from '../schemas.js'
 
 export const gemsRouter = Router()
@@ -17,23 +24,34 @@ gemsRouter.use(authenticate)
 // With middleware in the chain, Express types params as string | string[]
 const idOf = (req: Request): string => String(req.params.id)
 
-gemsRouter.get('/', requirePermission('inventory', 2), (req, res) => {
+// Loads the gem and checks the caller may write to the place it lives in
+// (active gems: inventory write, archived gems: archive write)
+function loadGemForWrite(req: Request) {
+  assertCanWriteSomewhere(req.user)
+  const gem = getGem(idOf(req))
+  if (!gem) throw new HttpError(404, 'Gem not found')
+  assertLevel(req.user, moduleOf(gem), PERMISSION.WRITE)
+  return gem
+}
+
+gemsRouter.get('/', (req, res) => {
   // Treat "?q=" or "?minPrice=" (empty strings) as "not provided"
-  // console.log('gemsRouter initialized', idOf(req))
   const cleaned = Object.fromEntries(
     Object.entries(req.query).filter(([, value]) => value !== '')
   )
-  res.json(listGems(listQuerySchema.parse(cleaned)))
+  const query = listQuerySchema.parse(cleaned)
+  res.json(listGems({ ...query, archived: resolveListScope(req.user, query.archived) }))
 })
 
-gemsRouter.get('/:id', requirePermission('inventory', 2), (req, res) => {
-  // console.log('gemsRouter initialized', idOf(req))
+gemsRouter.get('/:id', (req, res) => {
   const gem = getGem(idOf(req))
   if (!gem) throw new HttpError(404, 'Gem not found')
+  assertLevel(req.user, moduleOf(gem), PERMISSION.READ)
   res.json(gem)
 })
 
-gemsRouter.post('/', requirePermission('inventory', 4), (req, res) => {
+gemsRouter.post('/', (req, res) => {
+  assertLevel(req.user, 'inventory', PERMISSION.WRITE)
   const input = createGemSchema.parse(req.body)
   if (skuExists(input.sku)) {
     throw new HttpError(409, 'SKU already exists', [
@@ -43,19 +61,23 @@ gemsRouter.post('/', requirePermission('inventory', 4), (req, res) => {
   res.status(201).json(createGem(input))
 })
 
-gemsRouter.patch('/:id', requirePermission('inventory', 4), (req, res) => {
+// Also used for Archive ({ archived: true }) and Restore ({ archived: false })
+gemsRouter.patch('/:id', (req, res) => {
+  const current = loadGemForWrite(req)
   const patch = updateGemSchema.parse(req.body)
-  if (patch.sku && skuExists(patch.sku, idOf(req))) {
+  if (patch.sku && skuExists(patch.sku, current.id)) {
     throw new HttpError(409, 'SKU already exists', [
       { path: 'sku', message: 'SKU already exists' },
     ])
   }
-  const updated = updateGem(idOf(req), patch)
+  const updated = updateGem(current.id, patch)
   if (!updated) throw new HttpError(404, 'Gem not found')
   res.json(updated)
 })
 
-gemsRouter.delete('/:id', requirePermission('inventory', 4), (req, res) => {
-  if (!deleteGem(idOf(req))) throw new HttpError(404, 'Gem not found')
+// A real, permanent delete (archived or not)
+gemsRouter.delete('/:id', (req, res) => {
+  const gem = loadGemForWrite(req)
+  deleteGem(gem.id)
   res.status(204).end()
 })
